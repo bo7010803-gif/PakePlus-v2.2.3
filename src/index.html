@@ -3,35 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>竖屏三画面 · 修复版</title>
+  <title>竖屏三画面 · 最终修复版</title>
   <style>
-    /* ===== 强制锁定滚动条 ===== */
+    /* ===== 基础重置 ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      margin: 0;
-      padding: 0;
-      background: #000;
-    }
-    #app {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      position: relative;
       background: #000;
     }
 
-    /* ===== 基础重置 ===== */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       font-family: system-ui;
+      background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);
     }
+
     #app {
       width: 100%;
       height: 100vh;
@@ -39,6 +31,67 @@
       flex-direction: column;
       background: transparent;
       position: relative;
+      overflow: hidden;
+    }
+
+    /* ===== 可拖动标题栏 ===== */
+    .drag-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      -webkit-app-region: drag;      /* 允许拖动窗口 */
+      z-index: 210;
+      pointer-events: auto;
+    }
+
+    /* 按钮区域必须设为不可拖动，否则点击无效 */
+    .drag-bar button {
+      -webkit-app-region: no-drag;
+    }
+
+    /* ===== 右上角控制按钮组 ===== */
+    .fullscreen-controls {
+      position: absolute;
+      top: 50%;
+      right: 16px;
+      transform: translateY(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 220;
+      pointer-events: auto;
+      transition: opacity 0.25s ease;
+      opacity: 1;
+    }
+
+    /* 全屏时默认隐藏，鼠标移到右上角区域再显示 */
+    #app:fullscreen .fullscreen-controls {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #app:fullscreen .fullscreen-controls.show-controls {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .fullscreen-btn {
+      background: rgba(20, 20, 20, 0.6);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      border: none;
+      min-width: 50px;
+    }
+
+    .fullscreen-btn:hover {
+      background: rgba(60, 60, 60, 0.9);
     }
 
     /* ===== 画布容器 ===== */
@@ -54,6 +107,7 @@
       cursor: pointer;
       position: relative;
     }
+
     .canvas-wrapper {
       flex: 1 1 0;
       aspect-ratio: 1 / 1;
@@ -65,12 +119,15 @@
       backface-visibility: hidden;
       transform: translateZ(0);
     }
+
     .canvas-wrapper.middle {
       margin-left: -1px;
       margin-right: -1px;
       z-index: 1;
     }
+
     .canvas-wrapper.hidden { display: none; }
+
     canvas {
       width: 100%;
       height: 100%;
@@ -93,7 +150,9 @@
       justify-content: center;
       pointer-events: none;
     }
+
     .center-buttons.hidden { display: none; }
+
     .center-btn {
       display: flex;
       flex-direction: column;
@@ -104,8 +163,8 @@
       backdrop-filter: blur(12px);
       padding: 16px 24px;
       border-radius: 50px;
-      border: 1px solid rgba(255,255,255,0.2);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
       cursor: pointer;
       transition: all 0.25s ease;
       color: white;
@@ -115,12 +174,15 @@
       pointer-events: auto;
       min-width: 140px;
     }
+
     .center-btn:hover {
       background: rgba(36, 114, 164, 0.9);
       transform: scale(1.05);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
     }
+
     .center-btn:active { transform: scale(0.98); }
+
     .center-btn .icon { font-size: 36px; line-height: 1; }
 
     /* ===== 右侧播放列表 ===== */
@@ -130,7 +192,7 @@
       right: 0;
       width: 220px;
       height: 100%;
-      background: rgba(5,5,5,0.7) !important;
+      background: rgba(5, 5, 5, 0.7) !important;
       backdrop-filter: blur(20px);
       color: white;
       z-index: 100;
@@ -138,23 +200,26 @@
       transition: transform 0.25s ease;
       display: flex;
       flex-direction: column;
-      border-left: 1px solid rgba(255,255,255,0.08);
-      box-shadow: -2px 0 20px rgba(0,0,0,0.3);
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: -2px 0 20px rgba(0, 0, 0, 0.3);
       pointer-events: none;
     }
+
     .playlist-sidebar.show,
     .playlist-sidebar.locked {
       transform: translateX(0);
       pointer-events: auto;
     }
+
     .playlist-header {
       padding: 12px 10px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
     }
+
     .playlist-header h3 {
       font-size: 14px;
       font-weight: 500;
@@ -162,9 +227,11 @@
       align-items: center;
       gap: 4px;
     }
+
     .playlist-header-buttons { display: flex; gap: 6px; }
+
     .playlist-header-buttons button {
-      background: rgba(255,255,255,0.08);
+      background: rgba(255, 255, 255, 0.08);
       border: none;
       color: white;
       font-size: 14px;
@@ -172,10 +239,12 @@
       border-radius: 16px;
       cursor: pointer;
       transition: 0.15s;
-      border: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid rgba(255, 255, 255, 0.05);
       line-height: 1;
     }
-    .playlist-header-buttons button:hover { background: rgba(255,255,255,0.15); }
+
+    .playlist-header-buttons button:hover { background: rgba(255, 255, 255, 0.15); }
+
     .lock-btn.active { background: #ff2a6d; color: white; }
 
     .playlist-items {
@@ -183,9 +252,11 @@
       overflow-y: auto;
       padding: 6px 4px;
     }
+
     .playlist-items::-webkit-scrollbar { width: 4px; }
+
     .playlist-items::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 10px;
     }
 
@@ -199,15 +270,19 @@
       margin-bottom: 2px;
       position: relative;
     }
+
     .playlist-item:hover {
-      background: rgba(255,255,255,0.06);
+      background: rgba(255, 255, 255, 0.06);
       transform: translateX(2px);
     }
+
     .playlist-item.active {
-      background: rgba(255,42,109,0.25) !important;
+      background: rgba(255, 42, 109, 0.25) !important;
       box-shadow: inset 2px 0 0 #ff2a6d;
     }
+
     .playlist-item-info { flex: 1; min-width: 0; }
+
     .playlist-item-name {
       font-size: 12px;
       white-space: nowrap;
@@ -215,7 +290,9 @@
       text-overflow: ellipsis;
       margin-bottom: 1px;
     }
+
     .playlist-item-duration { font-size: 10px; color: #aaa; }
+
     .playlist-item-remove {
       opacity: 0;
       background: none;
@@ -226,29 +303,32 @@
       padding: 0 4px;
       transition: opacity 0.15s;
     }
+
     .playlist-item:hover .playlist-item-remove { opacity: 1; }
 
     .playlist-footer {
       padding: 10px 8px;
-      border-top: 1px solid rgba(255,255,255,0.1);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
       display: flex;
       gap: 4px;
       flex-shrink: 0;
       flex-wrap: wrap;
     }
+
     .playlist-footer button {
       flex: 1;
-      background: rgba(255,255,255,0.06);
+      background: rgba(255, 255, 255, 0.06);
       border: none;
       color: white;
       padding: 8px 0;
       border-radius: 20px;
       font-size: 12px;
       cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid rgba(255, 255, 255, 0.05);
       transition: 0.15s;
     }
-    .playlist-footer button:hover { background: rgba(255,255,255,0.12); }
+
+    .playlist-footer button:hover { background: rgba(255, 255, 255, 0.12); }
 
     /* ===== 底部控制栏 ===== */
     .controls {
@@ -264,11 +344,12 @@
       flex-direction: column;
       gap: 12px;
       transition: opacity 0.3s, visibility 0.3s;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
       color: white;
       z-index: 10;
       pointer-events: none;
     }
+
     .controls::before { display: none; }
 
     .controls button,
@@ -277,10 +358,12 @@
     .controls .volume-control {
       pointer-events: auto;
     }
+
     #app:fullscreen .controls {
       opacity: 0;
       visibility: hidden;
     }
+
     #app:fullscreen .controls.show-controls {
       opacity: 1;
       visibility: visible;
@@ -291,12 +374,14 @@
       align-items: center;
       gap: 16px;
     }
+
     .time-display {
       font-size: 15px;
       min-width: 110px;
       text-align: center;
       font-weight: 500;
     }
+
     .progress-container {
       flex: 1;
       position: relative;
@@ -304,20 +389,22 @@
       display: flex;
       align-items: center;
     }
+
     input[type="range"] {
       width: 100%;
       height: 4px !important;
       -webkit-appearance: none;
-      background: linear-gradient(to right, #ff2a6d 0%, #ff2a6d var(--progress, 0%), rgba(255,255,255,0.2) var(--progress, 0%)) !important;
+      background: linear-gradient(to right, #ff2a6d 0%, #ff2a6d var(--progress, 0%), rgba(255, 255, 255, 0.2) var(--progress, 0%)) !important;
       border-radius: 2px;
     }
+
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
       width: 14px !important;
       height: 14px !important;
       background: #ff2a6d !important;
       border-radius: 50%;
-      box-shadow: 0 0 6px #ff2a6d, 0 0 14px rgba(255,42,109,0.8);
+      box-shadow: 0 0 6px #ff2a6d, 0 0 14px rgba(255, 42, 109, 0.8);
       cursor: pointer;
     }
 
@@ -332,12 +419,14 @@
       transform: translateX(-50%);
       z-index: 100;
     }
+
     .thumbnail-preview canvas {
       width: 160px;
       height: 90px;
       display: block;
       border-radius: 4px;
     }
+
     .thumbnail-time {
       color: white;
       font-size: 12px;
@@ -357,22 +446,24 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(20,20,20,0.6) !important;
+      background: rgba(20, 20, 20, 0.6) !important;
       backdrop-filter: blur(12px);
       padding: 5px 12px;
       border-radius: 999px;
       border: 1px solid transparent;
     }
+
     .volume-icon {
       cursor: pointer;
       font-size: 18px;
       width: 24px;
       text-align: center;
     }
+
     .volume-slider { width: 80px; }
 
     button {
-      background: rgba(255,255,255,0.05) !important;
+      background: rgba(255, 255, 255, 0.05) !important;
       backdrop-filter: blur(12px);
       color: white;
       border: none;
@@ -380,77 +471,48 @@
       border-radius: 999px !important;
       font-size: 18px;
       cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       transition: all 0.25s ease;
       position: relative;
       overflow: hidden;
       min-width: 48px;
     }
+
     button::after {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.25), transparent);
+      background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.25), transparent);
       opacity: 0;
       transition: 0.3s;
     }
+
     button:hover::after { opacity: 1; }
+
     button:hover {
       transform: translateY(-2px) scale(1.03);
-      background: rgba(255,255,255,0.18) !important;
+      background: rgba(255, 255, 255, 0.18) !important;
     }
+
     button:active { transform: scale(0.92); }
 
-    #clearBtn { background: rgba(80,30,30,0.5) !important; font-size: 18px; }
+    #clearBtn { background: rgba(80, 30, 30, 0.5) !important; font-size: 18px; }
+
     .nav-btn { min-width: 50px !important; padding: 10px 15px !important; }
+
     #fullscreenBottomBtn { font-size: 20px; }
-
-    /* ----- 右上角控制栏样式修改 ----- */
-    .fullscreen-controls {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      display: flex;           /* 非全屏时默认显示 */
-      gap: 10px;
-      z-index: 200;
-      pointer-events: auto;    /* 非全屏可点击 */
-      transition: opacity 0.25s ease, right 0.25s ease;
-      opacity: 1;              /* 非全屏可见 */
-    }
-    /* 全屏时默认隐藏，鼠标移到右上角区域再显示 */
-    #app:fullscreen .fullscreen-controls {
-      opacity: 0;
-      pointer-events: none;    /* 隐藏时不可点击 */
-    }
-    #app:fullscreen .fullscreen-controls.show-controls {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .fullscreen-btn {
-      background: rgba(20,20,20,0.6);
-      backdrop-filter: blur(10px);
-      color: white;
-      padding: 10px 16px;
-      border-radius: 999px;
-      font-size: 20px;
-      cursor: pointer;
-      transition: 0.2s;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-      border: none;
-      min-width: 50px;
-    }
-    .fullscreen-btn:hover { background: rgba(60,60,60,0.9); }
   </style>
 </head>
 <body>
 <div id="app">
-  <!-- 右上角控制按钮（三屏、最小化、最大化、关闭） -->
-  <div class="fullscreen-controls" id="fullscreenControls">
-    <button class="fullscreen-btn" id="toggleTripleBtn" title="三屏模式">🖥️</button>
-    <button class="fullscreen-btn" id="minimizeBtn" title="最小化">➖</button>
-    <button class="fullscreen-btn" id="maximizeBtn" title="最大化">⬜</button>
-    <button class="fullscreen-btn" id="closeAppBtn" title="关闭">❌</button>
+  <!-- 可拖动标题栏 + 右上角按钮 -->
+  <div class="drag-bar">
+    <div class="fullscreen-controls" id="fullscreenControls">
+      <button class="fullscreen-btn" id="toggleTripleBtn" title="三屏模式">🖥️</button>
+      <button class="fullscreen-btn" id="minimizeBtn" title="最小化">➖</button>
+      <button class="fullscreen-btn" id="maximizeBtn" title="最大化">⬜</button>
+      <button class="fullscreen-btn" id="closeAppBtn" title="关闭">❌</button>
+    </div>
   </div>
 
   <!-- 右侧播放列表 -->
@@ -529,7 +591,7 @@
   (function(){
     "use strict";
 
-    // ----- DOM 元素 -----
+    // ========== DOM 元素 ==========
     const sourceVideo = document.getElementById('sourceVideo');
     const thumbVideo = document.getElementById('thumbVideo');
     const canvases = [
@@ -603,13 +665,14 @@
     let isPlaylistLocked = false;
     let playlistHideTimer = null;
 
-    // ---------- 辅助函数 ----------
+    // ========== 辅助函数 ==========
     function formatTime(seconds) {
       if (isNaN(seconds)) return '0:00';
       const h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60), s = Math.floor(seconds % 60);
       if (h > 0) return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
       return `${m}:${s.toString().padStart(2,'0')}`;
     }
+
     function updateProgress() {
       if (!sourceVideo.duration) return;
       const percent = (sourceVideo.currentTime / sourceVideo.duration) * 100;
@@ -617,13 +680,16 @@
       progressBar.style.setProperty('--progress', percent + '%');
       timeDisplay.textContent = `${formatTime(sourceVideo.currentTime)} / ${formatTime(sourceVideo.duration)}`;
     }
+
     function updatePlayPauseButton() {
       playPauseBtn.textContent = sourceVideo.paused ? '▶' : '⏸';
     }
+
     function clearCanvases() {
       contexts.forEach(ctx => { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height); });
       thumbCtx.fillStyle = '#000'; thumbCtx.fillRect(0, 0, thumbCanvas.width, thumbCanvas.height);
     }
+
     function toggleCenterButtons(show) {
       if (show) {
         centerButtons.classList.remove('hidden');
@@ -631,6 +697,7 @@
         centerButtons.classList.add('hidden');
       }
     }
+
     function updateCanvasAspectRatio() {
       const vw = sourceVideo.videoWidth;
       const vh = sourceVideo.videoHeight;
@@ -641,6 +708,7 @@
       thumbCanvas.width = 160;
       thumbCanvas.height = Math.round(160 * vh / vw);
     }
+
     function updateVolumeUI() {
       const vol = sourceVideo.volume;
       volumeSlider.value = vol * 100;
@@ -649,6 +717,7 @@
       else volumeIcon.textContent = '🔊';
     }
 
+    // ========== 音量控制 ==========
     volumeSlider.addEventListener('input', () => {
       sourceVideo.volume = volumeSlider.value / 100;
       sourceVideo.muted = false;
@@ -660,6 +729,7 @@
     });
     sourceVideo.addEventListener('volumechange', updateVolumeUI);
 
+    // ========== 三屏切换 ==========
     function toggleTripleMode() {
       tripleMode = !tripleMode;
       wrappers[0].classList.toggle('hidden', !tripleMode);
@@ -679,10 +749,10 @@
       }
       drawCurrentFrame();
     }
-
     toggleTripleBtn.addEventListener('click', toggleTripleMode);
 
-    // ★ 关闭按钮：强制退出进程
+    // ========== 窗口控制按钮 ==========
+    // 关闭：直接退出进程
     closeAppBtn.addEventListener('click', async () => {
       try {
         if (window.__TAURI__) {
@@ -696,7 +766,7 @@
       }, 300);
     });
 
-    // ★ 最小化按钮
+    // 最小化
     minimizeBtn.addEventListener('click', async () => {
       try {
         if (window.__TAURI__) {
@@ -704,7 +774,7 @@
           return;
         }
       } catch (e) {}
-      // 非 Tauri 环境：全屏切换（模拟最小化）
+      // 普通浏览器：全屏切换模拟
       if (document.fullscreenElement) {
         document.exitFullscreen();
       } else {
@@ -712,7 +782,7 @@
       }
     });
 
-    // ★ 最大化/还原按钮（⬜）
+    // 最大化/还原
     maximizeBtn.addEventListener('click', async () => {
       try {
         if (window.__TAURI__) {
@@ -726,7 +796,7 @@
           return;
         }
       } catch (e) {}
-      // 非 Tauri 环境：全屏切换
+      // 普通浏览器：全屏切换
       if (document.fullscreenElement) {
         document.exitFullscreen();
       } else {
@@ -743,7 +813,7 @@
     }
     fullscreenBottomBtn.addEventListener('click', toggleFullscreen);
 
-    // 中央按钮逻辑
+    // ========== 中央按钮逻辑 ==========
     centerOpenVideoBtn.addEventListener('click', () => centerVideoInput.click());
     centerOpenFolderBtn.addEventListener('click', () => centerFolderInput.click());
 
@@ -778,6 +848,7 @@
       toggleCenterButtons(false);
     });
 
+    // ========== 视频绘制与播放 ==========
     function drawFrame() {
       if (sourceVideo.paused || sourceVideo.ended) { if (isDrawing) isDrawing = false; return; }
       if (sourceVideo.videoWidth === 0) { animationFrame = requestAnimationFrame(drawFrame); return; }
@@ -789,17 +860,21 @@
       } catch (e) {}
       animationFrame = requestAnimationFrame(drawFrame);
     }
+
     function startDrawing() { if (isDrawing) return; isDrawing = true; drawFrame(); }
     function stopDrawing() { if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; } isDrawing = false; }
+
     function drawCurrentFrame() {
       if (sourceVideo.videoWidth === 0) return;
       contexts.forEach(ctx => ctx.drawImage(sourceVideo, 0, 0, ctx.canvas.width, ctx.canvas.height));
       updateProgress();
     }
 
+    // ========== 播放列表管理 ==========
     function isVideoFile(name) { return VIDEO_EXTENSIONS.includes(name.slice(name.lastIndexOf('.')).toLowerCase()); }
     function savePlaylist() { try { localStorage.setItem('triplePlayerPlaylist', JSON.stringify(playlist)); } catch(e) {} }
     function loadPlaylist() { try { const d = localStorage.getItem('triplePlayerPlaylist'); if(d) { playlist = JSON.parse(d); renderPlaylist(); } } catch(e) {} }
+
     function renderPlaylist() {
       playlistItems.innerHTML = '';
       playlistCount.textContent = `(${playlist.length})`;
@@ -813,6 +888,7 @@
         playlistItems.appendChild(div);
       });
     }
+
     function playFromPlaylist(idx) {
       if (idx < 0 || idx >= playlist.length) return;
       currentPlayingIndex = idx;
@@ -823,8 +899,10 @@
       renderPlaylist();
       toggleCenterButtons(false);
     }
+
     function playPrevious() { if(playlist.length) { let i = currentPlayingIndex - 1; if(i < 0) i = playlist.length - 1; playFromPlaylist(i); } }
     function playNext() { if(playlist.length) { let i = currentPlayingIndex + 1; if(i >= playlist.length) i = 0; playFromPlaylist(i); } }
+
     function removeFromPlaylist(idx) {
       if (idx < 0 || idx >= playlist.length) return;
       const wasCurrent = idx === currentPlayingIndex;
@@ -833,11 +911,13 @@
       else if (currentPlayingIndex > idx) currentPlayingIndex--;
       renderPlaylist(); savePlaylist();
     }
+
     function addFiles(files) {
       let added = 0;
       Array.from(files).forEach(f => { if(isVideoFile(f.name)) { playlist.push({ name: f.name, url: URL.createObjectURL(f), duration: '' }); added++; } });
       if(added) { renderPlaylist(); savePlaylist(); }
     }
+
     function clearPlaylist() { playlist = []; currentPlayingIndex = -1; renderPlaylist(); savePlaylist(); }
     function sortPlaylist() { playlist.sort((a,b)=>a.name.localeCompare(b.name,'zh-CN')); renderPlaylist(); savePlaylist(); }
     function dedupePlaylist() {
@@ -846,6 +926,7 @@
       playlist = newList; renderPlaylist(); savePlaylist();
     }
 
+    // ========== 播放列表显示/隐藏 ==========
     function adjustFullscreenControlsPosition() {
       const isSidebarVisible = playlistSidebar.classList.contains('show') || playlistSidebar.classList.contains('locked');
       fullscreenControls.style.right = isSidebarVisible ? '246px' : '16px';
@@ -858,6 +939,7 @@
         adjustFullscreenControlsPosition();
       }
     }
+
     function hidePlaylist() {
       if (!isPlaylistLocked) {
         playlistHideTimer = setTimeout(() => {
@@ -881,6 +963,7 @@
       playlistSidebar.classList.add('show');
       adjustFullscreenControlsPosition();
     });
+
     playlistSidebar.addEventListener('mouseleave', () => {
       if (!isPlaylistLocked) hidePlaylist();
     });
@@ -904,6 +987,7 @@
     const observer = new MutationObserver(adjustFullscreenControlsPosition);
     observer.observe(playlistSidebar, { attributes: true, attributeFilter: ['class'] });
 
+    // ========== 播放列表按钮绑定 ==========
     addFilesBtn.addEventListener('click', () => playlistFileInput.click());
     addFolderBtn.addEventListener('click', () => playlistFolderInput.click());
     clearPlaylistBtn.addEventListener('click', clearPlaylist);
@@ -912,6 +996,7 @@
     playlistFileInput.addEventListener('change', (e) => { addFiles(e.target.files); playlistFileInput.value = ''; });
     playlistFolderInput.addEventListener('change', (e) => { addFiles(e.target.files); playlistFolderInput.value = ''; });
 
+    // ========== 视频事件 ==========
     sourceVideo.addEventListener('play', () => { startDrawing(); updatePlayPauseButton(); toggleCenterButtons(false); });
     sourceVideo.addEventListener('pause', () => { stopDrawing(); drawCurrentFrame(); updatePlayPauseButton(); });
     sourceVideo.addEventListener('ended', () => { stopDrawing(); updatePlayPauseButton(); playNext(); });
@@ -942,6 +1027,7 @@
       toggleCenterButtons(true);
     });
 
+    // ========== 缩略图预览 ==========
     thumbVideo.addEventListener('loadedmetadata', () => { thumbVideoReady = true; });
     thumbVideo.addEventListener('seeked', () => {
       if (pendingThumbTime !== null && Math.abs(thumbVideo.currentTime - pendingThumbTime) < 0.1) {
@@ -956,6 +1042,7 @@
         pendingThumbTime = null;
       }
     });
+
     function requestThumbnail(time) {
       if (!sourceVideo.duration) return;
       const target = Math.min(sourceVideo.duration, Math.max(0, time));
@@ -967,6 +1054,7 @@
       pendingThumbTime = target;
       thumbVideo.currentTime = target;
     }
+
     progressContainer.addEventListener('mousemove', (e) => {
       if (!sourceVideo.duration) return;
       const now = Date.now(); if (now - lastThumbRequest < 100) return; lastThumbRequest = now;
@@ -974,24 +1062,27 @@
       requestThumbnail(Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)) * sourceVideo.duration);
     });
     progressContainer.addEventListener('mouseleave', () => { thumbnailPreview.style.display = 'none'; pendingThumbTime = null; });
+
     progressBar.addEventListener('input', (e) => {
       isSeeking = true;
       const seek = (parseFloat(e.target.value) / 100) * sourceVideo.duration;
       timeDisplay.textContent = `${formatTime(seek)} / ${formatTime(sourceVideo.duration)}`;
       requestThumbnail(seek);
     });
+
     progressBar.addEventListener('change', (e) => {
       sourceVideo.currentTime = (parseFloat(e.target.value) / 100) * sourceVideo.duration;
       isSeeking = false; thumbnailPreview.style.display = 'none'; drawCurrentFrame();
     });
 
+    // ========== 播放控制按钮 ==========
     playPauseBtn.addEventListener('click', () => sourceVideo.paused ? sourceVideo.play() : sourceVideo.pause());
     prevBtn.addEventListener('click', playPrevious);
     nextBtn.addEventListener('click', playNext);
 
+    // ========== 全屏时控制栏显隐 ==========
     const appEl = document.getElementById('app');
 
-    // 全屏时底部控制栏 + 右上角控制栏的显示逻辑
     function showControls() {
       controlBar.classList.add('show-controls');
       fullscreenControls.classList.add('show-controls');
@@ -1003,9 +1094,10 @@
         }
       }, 3000);
     }
+
     appEl.addEventListener('mousemove', (e) => {
       if (document.fullscreenElement) {
-        // 鼠标移动到右上角区域（右侧 200px，顶部 80px）时显示右上角控制栏
+        // 右上角区域：右侧200px，顶部80px
         if (e.clientY < 80 && e.clientX > window.innerWidth - 200) {
           fullscreenControls.classList.add('show-controls');
           clearTimeout(hideControlsTimeout);
@@ -1013,7 +1105,7 @@
             fullscreenControls.classList.remove('show-controls');
           }, 3000);
         }
-        // 底部控制栏恢复逻辑
+        // 底部控制栏
         if (e.clientY > window.innerHeight - 120) {
           showControls();
         }
@@ -1031,7 +1123,7 @@
       }
     });
 
-    // 键盘快捷键
+    // ========== 键盘快捷键 ==========
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       switch (e.key) {
@@ -1046,9 +1138,19 @@
       }
     });
 
-    videoArea.addEventListener('click', () => { clearTimeout(clickTimer); clickTimer = setTimeout(() => { if(sourceVideo.src) sourceVideo.paused ? sourceVideo.play() : sourceVideo.pause(); }, 200); });
-    videoArea.addEventListener('dblclick', () => { clearTimeout(clickTimer); toggleFullscreen(); });
+    videoArea.addEventListener('click', () => {
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => {
+        if(sourceVideo.src) sourceVideo.paused ? sourceVideo.play() : sourceVideo.pause();
+      }, 200);
+    });
 
+    videoArea.addEventListener('dblclick', () => {
+      clearTimeout(clickTimer);
+      toggleFullscreen();
+    });
+
+    // ========== 初始化 ==========
     function init() {
       loadPlaylist();
       sourceVideo.src = DEFAULT_VIDEO_URL; sourceVideo.muted = false; sourceVideo.volume = 1.0;
